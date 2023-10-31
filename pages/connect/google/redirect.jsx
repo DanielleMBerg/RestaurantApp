@@ -1,63 +1,66 @@
 import Router from "next/router";
-import axios from "axios";
-import { useEffect } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useRouter } from 'next/router';
+import AppContext from "../../../components/context";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
 
 const GoogleLogin = () => {
-  const router = useRouter();
-  const { accessToken } = router.query;
+  const [ statusText, setStatusText ] = useState();
+  const { setCurrentUser, setViewMode } = useContext(AppContext)
+  const router = useRouter();            
   
   useEffect(() => {
-    const login = () => {
-      if (typeof window === "undefined") {
-        return;
-      }
+    const accessToken = router.query['access_token'];
+    
+    if (!accessToken) return;
 
-      return new Promise((resolve, reject) => {
-        axios
-          .post(`${API_URL}/auth/google/callback`, { accessToken })
-          .then((res) => {
-            resolve(res);
-            console.log(res.data.user)
-            console.log(res.data.jwt);
-          })
-          .catch((error) => {
-            reject(error);
-            console.log("No Match")
-          });
-      });
-    }
-    login()
-  }, [])
+    // Successfully logged with the provider        
+    fetch(`${API_URL}/auth/google/callback?access_token=${encodeURIComponent(accessToken)}`)
+      .then(res => {
+        if (res.status !== 200) {
+          setStatusText('Could not log in')
+          throw new Error(`Couldn't login to Strapi. Status: ${res.status}`);
+        }
+        return res;
+      })
+      .then(res => res.json())
+      .then(res => {        
+        console.log(res);
 
-  const onSignIn = (googleUser) => {
-    const profile = googleUser.getBasicProfile();
-    console.log('ID: ' + profile.getId());
-    console.log('Name: ' + profile.getName());
-    console.log('Image URL: ' + profile.getImageUrl());
-    console.log('Email: ' + profile.getEmail());
-    Router.push('/')
-  }
-
+        localStorage.setItem('jwt', res.jwt);        
+        localStorage.setItem('username', res.user.username);
+        setCurrentUser(res.user.username);
+        setViewMode("restaurant");
+        setStatusText(`You have been successfully logged in as ${res.user.username}. You will be redirected in a few seconds...`);
+        setTimeout(() => router.push('/'), 3000); // Redirect to homepage after 3 sec
+      })
+      .catch(err => {
+        console.log(err);        
+      });      
+  }, [router]);
+  
   return (
-    <>
-      <h5>Success! You are logged in!</h5>
-      <br></br>
-      <button
-        type="submit"
-        className="btn btn-success"
-        onClick={onSignIn}
-      >Start Shopping</button>
-      <br></br>
-      <br></br>
-      <button
-        type="submit"
-        className="btn btn-secondary"
-        onClick={() => Router.push('/login')}
-      >Log Out</button>
-    </>
+    <div className="card mb-3 forms">
+      <h1 className="card-header">{statusText}</h1>
+        <div className="card-body">
+          {<>
+            <button
+              type="submit"
+              className="btn btn-success"
+              onClick={() => Router.push('/')}
+            >Start Shopping</button>
+            <br></br>
+            <br></br>
+            <button
+              type="submit"
+              className="btn btn-secondary"
+              onClick={() => Router.push('/login')}
+            >Log Out</button>
+          </> }
+        </div>
+    </div>  
   )
 };
 
