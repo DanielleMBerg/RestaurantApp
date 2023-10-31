@@ -1,11 +1,14 @@
 import React, { useState, useContext } from "react";
+import { useRouter } from "next/router";
 import { login } from "../components/auth";
 import AppContext from "../components/context";
 import { Card } from "../components/card";
 import Router from "next/router";
+import GoogleButton from 'react-google-button'
 
 const Login = () => {
-  const { currentUser, setCurrentUser } = useContext(AppContext);
+  const { currentUser, setCurrentUser, setViewMode } = useContext(AppContext);
+  const router = useRouter();
   const [emailInput, setEmailInput]         = useState(null);
   const [passwordInput, setPasswordInput]   = useState(null);
   const [show, setShow]                     = useState(true);
@@ -37,6 +40,7 @@ const Login = () => {
     setShow(true);
     setEmailInput(null);
     setPasswordInput(null);
+    setViewMode("restaurant")
   }
 
   return (
@@ -72,24 +76,17 @@ const Login = () => {
                 onClick={handleLogIn}
               >Log In</button>
               <br></br>
-              <br></br>
-              <div id="g_id_onload"
-                data-client_id="546276158927-k0rt1nn5vpe5lj74h4kofda95d2u1dhg.apps.googleusercontent.com"
-                data-context="signin"
-                data-ux_mode="popup"
-                data-login_uri={`${API_URL}/connect/google/`}
-                data-auto_prompt="false">
-              </div>
-              <div className="g_id_signin"
-                data-type="standard"
-                data-shape="rectangular"
-                data-theme="outline"
-                data-text="signin_with"
-                data-size="large"
-                data-logo_alignment="left"
-                data-width="300">
-              </div>
+              <br></br>                            
             </form>
+              <hr></hr>
+            <GoogleButton
+            className="google"
+              type="light" 
+              onClick={() => router.push('http://localhost:1337/connect/google')}
+            />
+
+
+
           </>
         ):(
           <>
